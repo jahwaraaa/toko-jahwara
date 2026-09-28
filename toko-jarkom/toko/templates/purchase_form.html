@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}Buat pembelian{% endblock %}
+{% block breadcrumb %}Pembelian / Baru{% endblock %}
+{% block content %}
+<section class="form-layout">
+    <div class="eyebrow">Pengadaan stok</div>
+    <div class="form-panel">
+        <h1>Buat pembelian</h1>
+        <p class="form-intro">Catat barang masuk dari supplier. Stok katalog akan bertambah setelah disimpan.</p>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+            {% for field in form %}
+                {% if field.name != 'jumlah_item' and not field.name|slice:':7' == 'produk_' and not field.name|slice:':7' == 'jumlah_' and not field.name|slice:':7' == 'harga_' %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
+                </div>
+                {% endif %}
+            {% endfor %}
+
+            <input type="hidden" id="id_jumlah_item" name="jumlah_item" value="{{ form.item_count }}">
+            <div class="section-head" style="margin-top:26px">
+                <div class="section-title"><h2>Detail barang</h2><span class="count-chip">Pilih produk dan jumlah</span></div>
+                <button class="button secondary small" type="button" id="add-item">＋ Tambah baris</button>
+            </div>
+            <div class="purchase-items" id="purchase-items">
+                {% for row in form.item_rows %}
+                <div class="purchase-item" data-index="{{ forloop.counter0 }}">
+                    <div class="field"><label for="{{ row.0.id_for_label }}">{{ row.0.label }}</label>{{ row.0 }}{{ row.0.errors }}</div>
+                    <div class="field"><label for="{{ row.1.id_for_label }}">{{ row.1.label }}</label>{{ row.1 }}{{ row.1.errors }}</div>
+                    <div class="field"><label for="{{ row.2.id_for_label }}">{{ row.2.label }}</label>{{ row.2 }}{{ row.2.errors }}</div>
+                    <button class="item-remove" type="button" aria-label="Hapus baris produk">Hapus</button>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="purchase-summary"><span>Total pembelian</span><strong class="purchase-total">Rp <span id="purchase-total">0</span></strong></div>
+            <div class="form-actions"><a class="button secondary" href="{% url 'index' %}">Batal</a><button class="button" type="submit">Simpan pembelian</button></div>
+        </form>
+    </div>
+</section>
+{{ products_json|json_script:'purchase-products' }}
+{% endblock %}
+{% block scripts %}
+<script>
+    const products = JSON.parse(document.getElementById('purchase-products').textContent);
+    const productPrices = Object.fromEntries(products.map((product) => [product.id, product.harga]));
+    const itemList = document.getElementById('purchase-items');
+    const itemCount = document.getElementById('id_jumlah_item');
+    const totalOutput = document.getElementById('purchase-total');
+    const maxItems = 12;
+
+    function syncRows() {
+        const rows = [...itemList.querySelectorAll('.purchase-item')];
+        itemCount.value = rows.length;
+        rows.forEach((row) => {
+            const product = row.querySelector('select');
+            const price = row.querySelector('input[name^="harga_"]');
+            const quantity = row.querySelector('input[name^="jumlah_"]');
+            if (product && price && productPrices[product.value] !== undefined && !price.dataset.edited) {
+                price.value = productPrices[product.value];
+            }
+            if (product) product.onchange = () => { price.dataset.edited = ''; price.value = productPrices[product.value] ?? 0; updateTotal(); };
+            if (price) price.oninput = () => { price.dataset.edited = 'true'; updateTotal(); };
+            if (quantity) quantity.oninput = updateTotal;
+            const remove = row.querySelector('.item-remove');
+            remove.hidden = rows.length === 1;
+            remove.onclick = () => { row.remove(); syncRows(); };
+        });
+        updateTotal();
+    }
+
+    function updateTotal() {
+        const total = [...itemList.querySelectorAll('.purchase-item')].reduce((sum, row) => {
+            const price = Number(row.querySelector('input[name^="harga_"]').value) || 0;
+            const quantity = Number(row.querySelector('input[name^="jumlah_"]').value) || 0;
+            return sum + price * quantity;
+        }, 0);
+        totalOutput.textContent = new Intl.NumberFormat('id-ID').format(total);
+    }
+
+    document.getElementById('add-item').addEventListener('click', () => {
+        const rows = [...itemList.querySelectorAll('.purchase-item')];
+        if (rows.length >= maxItems) return;
+        const clone = rows[0].cloneNode(true);
+        const index = rows.length;
+        clone.dataset.index = index;
+        clone.querySelectorAll('input, select, label').forEach((element) => {
+            if (element.name) element.name = element.name.replace(/_\d+$/, `_${index}`);
+            if (element.id) element.id = element.id.replace(/_\d+$/, `_${index}`);
+            if (element.htmlFor) element.htmlFor = element.htmlFor.replace(/_\d+$/, `_${index}`);
+            if (element.matches('input')) { element.value = element.name.startsWith('jumlah_') ? 1 : 0; delete element.dataset.edited; }
+        });
+        itemList.appendChild(clone);
+        syncRows();
+    });
+
+    syncRows();
+</script>
+{% endblock %}

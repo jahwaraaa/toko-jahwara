@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Detail Pembelian{% endblock %}
+{% block breadcrumb %}Pembelian / Detail{% endblock %}
+{% block content %}
+<div class="detail-heading">
+    <div><div class="eyebrow">Rincian transaksi</div><h1>Detail pembelian</h1><a class="history-link" href="{% url 'purchase_history' %}">← Kembali ke riwayat</a></div>
+    <span class="status-pill {{ purchase.status_pembayaran }}">{{ purchase.status_label }}</span>
+</div>
+
+<section class="detail-meta" aria-label="Informasi pembelian">
+    <div class="detail-meta-item"><span class="detail-meta-label">Supplier</span><span class="detail-meta-value">{{ purchase.supplier }}</span></div>
+    <div class="detail-meta-item"><span class="detail-meta-label">Tanggal pembelian</span><span class="detail-meta-value">{{ purchase.tanggal }}</span></div>
+    <div class="detail-meta-item"><span class="detail-meta-label">Dicatat oleh</span><span class="detail-meta-value">{{ purchase.dibuat_oleh }}</span></div>
+</section>
+
+<div class="table-wrap">
+    <table>
+        <thead><tr><th>Produk</th><th>Harga beli</th><th>Jumlah</th><th>Subtotal</th></tr></thead>
+        <tbody>
+        {% for item in purchase.items %}
+            <tr><td class="product-name">{{ item.nama }}</td><td class="price">Rp {{ item.harga }}</td><td>{{ item.jumlah }} unit</td><td class="price">Rp {{ item.subtotal }}</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <div class="detail-total"><span>Total pembelian</span><strong>Rp {{ purchase.total }}</strong></div>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Ringkasan Inventaris{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="hero-copy">
+        <div class="eyebrow">Ruang kerja inventaris</div>
+        <h1>Stok rapi, kerja lebih ringan.</h1>
+        <p>Pantau semua perlengkapan jaringan dan kelola katalog toko dari satu tempat.</p>
+        {% if user.is_authenticated %}<a class="hero-link" href="{% url 'product_create' %}">＋ Tambahkan produk <span aria-hidden="true">→</span></a>
+        {% else %}<a class="hero-link" href="{% url 'login' %}">Masuk untuk mulai mengelola <span aria-hidden="true">→</span></a>{% endif %}
+    </div>
+    <div class="hero-art"><img src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1000&q=85" alt="Detail komponen elektronik pada papan sirkuit"></div>
+</section>
+
+<section class="metric-grid" aria-label="Ringkasan inventaris">
+    <div class="metric accent"><span class="metric-label">Jenis produk</span><strong class="metric-value">{{ product_count }}</strong></div>
+    <div class="metric"><span class="metric-label">Total unit tersedia</span><strong class="metric-value">{{ total_stock }}</strong></div>
+    <div class="metric"><span class="metric-label">Stok menipis</span><strong class="metric-value">{{ low_stock_count }}</strong></div>
+</section>
+
+<section id="inventory" class="inventory-section" aria-labelledby="inventory-title">
+    <div class="section-head">
+        <div class="section-title"><h2 id="inventory-title">Katalog produk</h2><span class="count-chip">{{ product_count }} item</span></div>
+        <div class="toolbar"><input class="search" id="product-search" type="search" placeholder="Cari produk..." aria-label="Cari nama produk">{% if user.is_authenticated %}<a class="button small" href="{% url 'product_create' %}">＋ Produk baru</a>{% endif %}</div>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Produk</th><th>Harga satuan</th><th>Stok</th>{% if user.is_authenticated %}<th style="text-align:right">Aksi</th>{% endif %}</tr></thead>
+            <tbody id="product-list">
+            {% for product in products %}
+                <tr>
+                    <td><div class="product-cell"><span class="product-mark">{{ product.nama|slice:':2'|upper }}</span><div><div class="product-name">{{ product.nama }}</div><div class="product-sub">Perlengkapan jaringan</div></div></div></td>
+                    <td class="price">Rp {{ product.harga }}</td>
+                    <td><span class="stock{% if product.stok < 10 %} low{% endif %}{% if product.stok == 0 %} zero{% endif %}">{% if product.stok == 0 %}Habis{% else %}{{ product.stok }} unit{% endif %}</span></td>
+                    {% if user.is_authenticated %}<td><div class="row-actions"><a class="action-link" href="{% url 'product_edit' product.product_id %}">Edit</a><form class="delete-inline" method="post" action="{% url 'product_delete' product.product_id %}" onsubmit="return confirm('Hapus {{ product.nama|escapejs }} dari inventaris?')">{% csrf_token %}<button class="action-link" type="submit">Hapus</button></form></div></td>{% endif %}
+                </tr>
+            {% empty %}
+                <tr><td class="empty-state" colspan="4">Belum ada produk di inventaris. Tambahkan produk pertama Anda.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <div class="empty-state" id="no-results" hidden>Produk tidak ditemukan.</div>
+    </div>
+    <div class="table-foot"><span>Menampilkan {{ product_count }} produk</span><span>Terhubung ke MongoDB</span></div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+    const search = document.getElementById('product-search');
+    const rows = [...document.querySelectorAll('#product-list tr')];
+    const noResults = document.getElementById('no-results');
+
+    search.addEventListener('input', () => {
+        const query = search.value.trim().toLocaleLowerCase('id');
+        let visibleCount = 0;
+        rows.forEach((row) => {
+            const matches = row.textContent.toLocaleLowerCase('id').includes(query);
+            row.hidden = !matches;
+            if (matches) visibleCount += 1;
+        });
+        noResults.hidden = visibleCount !== 0;
+    });
+</script>
+{% endblock %}

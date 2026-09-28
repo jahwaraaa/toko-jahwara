@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block breadcrumb %}{{ page_title }}{% endblock %}
+{% block content %}
+<section class="auth-layout">
+    <div class="auth-panel">
+        <div class="eyebrow">Toko Jahwara</div>
+        <h1>{{ page_title }}</h1>
+        <p class="form-intro">{{ page_intro }}</p>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+            {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+            {% for field in form %}
+            <div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}{% if field.help_text %}<span class="help-text">{{ field.help_text|safe }}</span>{% endif %}</div>
+            {% endfor %}
+            <button class="button" type="submit" style="width:100%; margin-top:8px">{{ submit_label }}</button>
+        </form>
+        <p class="auth-switch">{{ switch_prompt }} <a href="{% url switch_url %}">{{ switch_label }}</a></p>
+    </div>
+    <div class="auth-image"><img src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=85" alt="Papan sirkuit elektronik"><div class="auth-image-copy"><strong>Semua stok, satu ruang.</strong><span>Inventaris toko jaringan yang mudah dikelola.</span></div></div>
+</section>
+{% endblock %}

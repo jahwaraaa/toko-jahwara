@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Riwayat Pembelian{% endblock %}
+{% block breadcrumb %}Pembelian / Riwayat{% endblock %}
+{% block content %}
+<div class="eyebrow">Pengadaan</div>
+<div class="detail-heading">
+    <div><h1>Riwayat pembelian</h1><p class="muted">Lacak supplier, tanggal, dan status pembayaran.</p></div>
+    <a class="button" href="{% url 'purchase_create' %}">＋ Buat pembelian</a>
+</div>
+
+<form class="filter-panel" method="get">
+    <div class="field"><label for="{{ form.supplier.id_for_label }}">Supplier</label>{{ form.supplier }}</div>
+    <div class="field"><label for="{{ form.tanggal_dari.id_for_label }}">Dari tanggal</label>{{ form.tanggal_dari }}</div>
+    <div class="field"><label for="{{ form.tanggal_sampai.id_for_label }}">Sampai tanggal</label>{{ form.tanggal_sampai }}{% if form.tanggal_sampai.errors %}<div class="field-errors">{{ form.tanggal_sampai.errors }}</div>{% endif %}</div>
+    <div class="field"><label for="{{ form.status_pembayaran.id_for_label }}">Status pembayaran</label>{{ form.status_pembayaran }}</div>
+    <div class="toolbar"><button class="button small" type="submit">Terapkan</button><a class="button secondary small" href="{% url 'purchase_history' %}">Reset</a></div>
+</form>
+
+<div class="section-head"><div class="section-title"><h2>Semua transaksi</h2><span class="count-chip">{{ purchase_count }} pembelian</span></div></div>
+<div class="table-wrap">
+    <table>
+        <thead><tr><th>Tanggal</th><th>Supplier</th><th>Jumlah item</th><th>Total</th><th>Pembayaran</th><th></th></tr></thead>
+        <tbody>
+        {% for purchase in purchases %}
+            <tr>
+                <td>{{ purchase.tanggal }}</td>
+                <td class="product-name">{{ purchase.supplier }}</td>
+                <td>{{ purchase.items|length }} item</td>
+                <td class="price">Rp {{ purchase.total }}</td>
+                <td><span class="status-pill {{ purchase.status_pembayaran }}">{{ purchase.status_label }}</span></td>
+                <td><a class="history-link" href="{% url 'purchase_detail' purchase.purchase_id %}">Detail →</a></td>
+            </tr>
+        {% empty %}
+            <tr><td class="empty-state" colspan="6">Belum ada pembelian yang cocok dengan filter ini.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
